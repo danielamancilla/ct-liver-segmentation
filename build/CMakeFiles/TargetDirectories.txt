@@ -1,0 +1,3 @@
+/home/danny/Documentos/ct-liver-segmentation/build/CMakeFiles/edit_cache.dir
+/home/danny/Documentos/ct-liver-segmentation/build/CMakeFiles/rebuild_cache.dir
+/home/danny/Documentos/ct-liver-segmentation/build/CMakeFiles/proyecto.dir

@@ -1,18 +1,28 @@
 #include "itkImage.h"
+#include "itkGDCMImageIO.h"
 #include "itkImageFileReader.h"
 #include "itkImageFileWriter.h"
 #include "itkConfidenceConnectedImageFilter.h"
+#include "itkRescaleIntensityImageFilter.h"
 
-typedef double FloatPixelType;
+typedef signed short PixelType;
 const unsigned int Dimension = 2;
-typedef itk::Image< FloatPixelType, Dimension > InputImage;
-typedef itk::Image< FloatPixelType, Dimension > OutputImage;
+typedef itk::Image< PixelType, Dimension > ImageType;
 
-int main(int argc, char* argv[]) {
-	if (argc != 3) {
+/*
+**
+** CT Liver segmentation
+**
+** D. Mancilla, D. Pedraza
+** Pontificia Universidad Javeriana, 2017
+**
+**/
+
+int main( int argc, char* argv[] ) {
+	if ( argc != 3 ) {
 		std::cerr << "Usage: " << std::endl;
 		std::cerr << argv[0];
-		std::cerr << " input output inverse";
+		std::cerr << " input output";
 		std::cerr << std::endl;
 		return EXIT_FAILURE;
 	}
@@ -21,13 +31,19 @@ int main(int argc, char* argv[]) {
 	const char * outputFileName = argv[2];
 
 	try {
-		typedef itk::ImageFileWriter< OutputImage >  WriterType;
-		typedef itk::ImageFileReader< InputImage >  ReaderType;
+
+		// Reader for DICOM slice
+		typedef itk::ImageFileWriter< ImageType >  WriterType;
+		typedef itk::ImageFileReader< ImageType >  ReaderType;
 		ReaderType::Pointer reader = ReaderType::New();
-		reader->SetFileName(inputFileName);
+		reader->SetFileName( inputFileName );
+
+		typedef itk::GDCMImageIO ImageIOType;
+		ImageIOType::Pointer dicomIO = ImageIOType::New();
+		reader->SetImageIO( dicomIO );
 		reader->Update();
 
-		typedef itk::ConfidenceConnectedImageFilter<InputImage, InputImage> ConfidenceConnectedFilterType;
+		typedef itk::ConfidenceConnectedImageFilter< ImageType, ImageType > ConfidenceConnectedFilterType;
 		ConfidenceConnectedFilterType::Pointer confidenceConnectedFilter = ConfidenceConnectedFilterType::New();
 		confidenceConnectedFilter->SetInitialNeighborhoodRadius(3);
 		confidenceConnectedFilter->SetMultiplier(3);
@@ -35,21 +51,21 @@ int main(int argc, char* argv[]) {
 		confidenceConnectedFilter->SetReplaceValue(255);
 
 		// Set seed
-		InputImage::IndexType seed;
-		seed[0] = atoi("50");
-		seed[1] = atoi("100");
-		confidenceConnectedFilter->SetSeed(seed);
-		confidenceConnectedFilter->SetInput(reader->GetOutput());
-
+		ImageType::IndexType seed;
+		seed[0] = atoi( "50" );
+		seed[1] = atoi( "100" );
+		confidenceConnectedFilter->SetSeed( seed );
+		confidenceConnectedFilter->SetInput( reader->GetOutput() );
 
 		WriterType::Pointer writer = WriterType::New();
-		writer->SetFileName(inputFileName);
-		writer->SetInput(confidenceConnectedFilter->GetOutput());
+		writer->SetFileName( outputFileName );
+		writer->SetImageIO( dicomIO );
+		writer->SetInput( confidenceConnectedFilter->GetOutput( ) );
 		writer->Update();
 	}
 	catch (itk::ExceptionObject & err) {
-		std::cout << "Caught an exception!" << std::endl;
-		std::cout << err << std::endl;
+		std::cout << "\n\tCaught an exception!" << std::endl;
+		std::cout << "\t" << err << std::endl;
 		return EXIT_FAILURE;
 	}
 }
