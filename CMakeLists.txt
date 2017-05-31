@@ -15,6 +15,7 @@ INCLUDE(${ITK_USE_FILE})
 SET(
   _programs
   LiverSegmentation
+  LiverSegmentationAllImages
   LiverSegmentationMultipleSeeds
   )
 
