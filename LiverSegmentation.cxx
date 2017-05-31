@@ -4,6 +4,7 @@
 #include "itkImageFileWriter.h"
 #include "itkImageDuplicator.h"
 #include "itkConnectedThresholdImageFilter.h"
+#include "itkCurvatureFlowImageFilter.h"
 
 typedef signed short PixelType;
 const unsigned int Dimension = 2;
@@ -15,6 +16,12 @@ typedef itk::Image< PixelType, Dimension > ImageType;
 **
 ** D. Mancilla, D. Pedraza
 ** Pontificia Universidad Javeriana, 2017
+** 
+** e.g. for 000016.dcm image, use:
+** seedX : 330
+** seedY : 215
+** lowerThreshold : 96
+** upperThreshold : 160
 **
 **/
 
@@ -50,10 +57,17 @@ int main( int argc, char* argv[] ) {
 		reader->Update();
 		ImageType::Pointer inputImage = reader->GetOutput();
 
+		// Smooth image
+		typedef itk::CurvatureFlowImageFilter< ImageType, ImageType > CurvatureFlowImageFilterType;
+  		CurvatureFlowImageFilterType::Pointer smoother = CurvatureFlowImageFilterType::New();
+		smoother->SetNumberOfIterations( 5 );
+  		smoother->SetTimeStep( 0.125 );
+		smoother->SetInput( inputImage );
+
 		// Region grow
 		typedef itk::ConnectedThresholdImageFilter< ImageType, ImageType > ConnectedFilterType;
 		ConnectedFilterType::Pointer regionGrow = ConnectedFilterType::New();
-		regionGrow->SetInput( inputImage );
+		regionGrow->SetInput( smoother->GetOutput() );
 		regionGrow->SetReplaceValue( 255 );		
 		regionGrow->SetLower(  lowerThreshold  );
   		regionGrow->SetUpper(  upperThreshold  );
