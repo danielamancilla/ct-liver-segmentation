@@ -6,12 +6,12 @@ endif()
 
 
 # This project is designed to be built outside the Insight source tree.
-project(Proyecto)
+project(CTLiverSegmentation)
 
 # Find ITK.
 find_package(ITK REQUIRED)
 include(${ITK_USE_FILE})
 
-add_executable(proyecto LiverSegmentation.cxx )
+add_executable(LiverSegmentation LiverSegmentation.cxx )
 
-target_link_libraries(proyecto ${ITK_LIBRARIES})
+target_link_libraries(LiverSegmentation ${ITK_LIBRARIES})

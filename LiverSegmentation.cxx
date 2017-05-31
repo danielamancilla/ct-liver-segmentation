@@ -2,8 +2,8 @@
 #include "itkGDCMImageIO.h"
 #include "itkImageFileReader.h"
 #include "itkImageFileWriter.h"
-#include "itkConfidenceConnectedImageFilter.h"
-#include "itkRescaleIntensityImageFilter.h"
+#include "itkImageDuplicator.h"
+#include "itkConnectedThresholdImageFilter.h"
 
 typedef signed short PixelType;
 const unsigned int Dimension = 2;
@@ -19,16 +19,22 @@ typedef itk::Image< PixelType, Dimension > ImageType;
 **/
 
 int main( int argc, char* argv[] ) {
-	if ( argc != 3 ) {
-		std::cerr << "Usage: " << std::endl;
+
+	if ( argc != 7 ) {
+		std::cerr << "\nUsage: " << std::endl;
 		std::cerr << argv[0];
-		std::cerr << " input output";
+		std::cerr << " input output seedX seedY lowerThreshold upperThreshold";
 		std::cerr << std::endl;
 		return EXIT_FAILURE;
 	}
 
+	// Initializations
 	const char * inputFileName = argv[1];
 	const char * outputFileName = argv[2];
+	const int seedX = atoi( argv[3] );
+	const int seedY = atoi( argv[4] );	
+	const PixelType lowerThreshold = atoi( argv[5] );
+ 	const PixelType upperThreshold = atoi( argv[6] );
 
 	try {
 
@@ -42,26 +48,31 @@ int main( int argc, char* argv[] ) {
 		ImageIOType::Pointer dicomIO = ImageIOType::New();
 		reader->SetImageIO( dicomIO );
 		reader->Update();
+		ImageType::Pointer inputImage = reader->GetOutput();
 
-		typedef itk::ConfidenceConnectedImageFilter< ImageType, ImageType > ConfidenceConnectedFilterType;
-		ConfidenceConnectedFilterType::Pointer confidenceConnectedFilter = ConfidenceConnectedFilterType::New();
-		confidenceConnectedFilter->SetInitialNeighborhoodRadius(3);
-		confidenceConnectedFilter->SetMultiplier(3);
-		confidenceConnectedFilter->SetNumberOfIterations(5);
-		confidenceConnectedFilter->SetReplaceValue(255);
+		// Region grow
+		typedef itk::ConnectedThresholdImageFilter< ImageType, ImageType > ConnectedFilterType;
+		ConnectedFilterType::Pointer regionGrow = ConnectedFilterType::New();
+		regionGrow->SetInput( inputImage );
+		regionGrow->SetReplaceValue( 255 );		
+		regionGrow->SetLower(  lowerThreshold  );
+  		regionGrow->SetUpper(  upperThreshold  );
+		
+		// Seed point
+		ImageType::IndexType seedIndex;
+		seedIndex[0] = seedX;
+  		seedIndex[1] = seedY;
+		regionGrow->SetSeed( seedIndex );
 
-		// Set seed
-		ImageType::IndexType seed;
-		seed[0] = atoi( "50" );
-		seed[1] = atoi( "100" );
-		confidenceConnectedFilter->SetSeed( seed );
-		confidenceConnectedFilter->SetInput( reader->GetOutput() );
-
+		// Writer
 		WriterType::Pointer writer = WriterType::New();
 		writer->SetFileName( outputFileName );
 		writer->SetImageIO( dicomIO );
-		writer->SetInput( confidenceConnectedFilter->GetOutput( ) );
+		writer->SetInput( regionGrow->GetOutput() );
 		writer->Update();
+
+		std::cout << "\nFinished CT liver segmentation" << std::endl;
+
 	}
 	catch (itk::ExceptionObject & err) {
 		std::cout << "\n\tCaught an exception!" << std::endl;
