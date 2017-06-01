@@ -17,6 +17,9 @@ SET(
   LiverSegmentation
   LiverSegmentationMultipleSeeds
   WatershedSegmentation
+  LiverSegmentationWatershedRegionGrow
+  LiverSegmentationWatershedRegionGrowIsolated
+  # LiverSegmentationAllImages
   )
 
 FOREACH(_p ${_programs})

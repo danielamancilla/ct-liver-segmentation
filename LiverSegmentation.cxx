@@ -7,7 +7,7 @@
 #include "itkCurvatureFlowImageFilter.h"
 #include "itkRGBToLuminanceImageFilter.h"
 
-typedef unsigned char PixelType;
+typedef signed short PixelType;
 const unsigned int Dimension = 2;
 typedef itk::Image< PixelType, Dimension > ImageType;
 
@@ -59,21 +59,16 @@ int main( int argc, char* argv[] ) {
 		ImageType::Pointer inputImage = reader->GetOutput();
 
 		// Smooth image
-		/*typedef itk::CurvatureFlowImageFilter< ImageType, ImageType > CurvatureFlowImageFilterType;
+		typedef itk::CurvatureFlowImageFilter< ImageType, ImageType > CurvatureFlowImageFilterType;
   		CurvatureFlowImageFilterType::Pointer smoother = CurvatureFlowImageFilterType::New();
 		smoother->SetNumberOfIterations( 5 );
   		smoother->SetTimeStep( 0.125 );
-		smoother->SetInput( inputImage );*/
-
-		// Convert to luminance
-		typedef itk::RGBToLuminanceImageFilter< ImageType, ImageType > ToGrayscaleFilterType;
-  		ToGrayscaleFilterType::Pointer filter = ToGrayscaleFilterType::New();
-  		filter->SetInput( inputImage );
+		smoother->SetInput( inputImage );
 
 		// Region grow
 		typedef itk::ConnectedThresholdImageFilter< ImageType, ImageType > ConnectedFilterType;
 		ConnectedFilterType::Pointer regionGrow = ConnectedFilterType::New();
-		regionGrow->SetInput( filter->GetOutput() );
+		regionGrow->SetInput( smoother->GetOutput() );
 		regionGrow->SetReplaceValue( 255 );		
 		regionGrow->SetLower(  lowerThreshold  );
   		regionGrow->SetUpper(  upperThreshold  );
@@ -87,7 +82,7 @@ int main( int argc, char* argv[] ) {
 		// Writer
 		WriterType::Pointer writer = WriterType::New();
 		writer->SetFileName( outputFileName );
-		//writer->SetImageIO( dicomIO );
+		writer->SetImageIO( dicomIO );
 		writer->SetInput( regionGrow->GetOutput() );
 		writer->Update();
 
