@@ -19,7 +19,7 @@ SET(
   WatershedSegmentation
   LiverSegmentationWatershedRegionGrow
   LiverSegmentationWatershedRegionGrowIsolated
-  # LiverSegmentationAllImages
+  LiverSegmentationAllImages
   )
 
 FOREACH(_p ${_programs})
